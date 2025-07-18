@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hms.mapper.OrdersMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="OrdersResultMap" type="Orders">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="user_id" property="userId"/>
+        <result column="room_id" property="roomId"/>
+        <result column="check_in_date" property="checkInDate"/>
+        <result column="check_out_date" property="checkOutDate"/>
+        <result column="nights" property="nights"/>
+        <result column="guests" property="guests"/>
+        <result column="total_price" property="totalPrice"/>
+        <result column="contact_name" property="contactName"/>
+        <result column="contact_phone" property="contactPhone"/>
+        <result column="contact_email" property="contactEmail"/>
+        <result column="special_requests" property="specialRequests"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="payment_status" property="paymentStatus"/>
+        <result column="payment_time" property="paymentTime"/>
+        <result column="cancel_reason" property="cancelReason"/>
+        <result column="cancel_time" property="cancelTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <!-- 订单和用户、房源关联结果映射 -->
+    <resultMap id="OrdersWithDetailsResultMap" type="Orders" extends="OrdersResultMap">
+        <association property="user" javaType="User">
+            <id column="user_id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+            <result column="email" property="email"/>
+            <result column="phone" property="phone"/>
+        </association>
+        <association property="room" javaType="Room">
+            <id column="room_id" property="id"/>
+            <result column="room_name" property="roomName"/>
+            <result column="room_type" property="roomType"/>
+            <result column="address" property="address"/>
+            <result column="city" property="city"/>
+            <result column="district" property="district"/>
+            <result column="price_per_night" property="pricePerNight"/>
+        </association>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        o.id, o.order_no, o.user_id, o.room_id, o.check_in_date, o.check_out_date,
+        o.nights, o.guests, o.total_price, o.contact_name, o.contact_phone, o.contact_email,
+        o.special_requests, o.order_status, o.payment_status, o.payment_time,
+        o.cancel_reason, o.cancel_time, o.create_time, o.update_time, o.deleted
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            o.deleted = 0
+            <if test="userId != null">
+                AND o.user_id = #{userId}
+            </if>
+            <if test="roomId != null">
+                AND o.room_id = #{roomId}
+            </if>
+            <if test="orderStatus != null">
+                AND o.order_status = #{orderStatus}
+            </if>
+            <if test="paymentStatus != null">
+                AND o.payment_status = #{paymentStatus}
+            </if>
+            <if test="startDate != null">
+                AND o.check_in_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND o.check_out_date &lt;= #{endDate}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (o.order_no LIKE CONCAT('%', #{keyword}, '%') 
+                     OR o.contact_name LIKE CONCAT('%', #{keyword}, '%')
+                     OR o.contact_phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据ID查询订单 -->
+    <select id="selectById" resultMap="OrdersResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM orders o
+        WHERE o.id = #{id} AND o.deleted = 0
+    </select>
+
+    <!-- 根据订单号查询订单 -->
+    <select id="selectByOrderNo" resultMap="OrdersResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM orders o
+        WHERE o.order_no = #{orderNo} AND o.deleted = 0
+    </select>
+
+    <!-- 根据ID查询订单（包含用户和房源信息） -->
+    <select id="selectByIdWithDetails" resultMap="OrdersWithDetailsResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               u.username, u.real_name, u.email, u.phone,
+               r.room_name, r.room_type, r.address, r.city, r.district, r.price_per_night
+        FROM orders o
+        LEFT JOIN user u ON o.user_id = u.id AND u.deleted = 0
+        LEFT JOIN room r ON o.room_id = r.id AND r.deleted = 0
+        WHERE o.id = #{id} AND o.deleted = 0
+    </select>
+
+    <!-- 根据用户ID查询订单列表 -->
+    <select id="selectByUserId" resultMap="OrdersResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM orders o
+        WHERE o.user_id = #{userId} AND o.deleted = 0
+        <if test="orderStatus != null">
+            AND o.order_status = #{orderStatus}
+        </if>
+        <if test="paymentStatus != null">
+            AND o.payment_status = #{paymentStatus}
+        </if>
+        ORDER BY o.create_time DESC
+    </select>
+
+    <!-- 查询所有订单 -->
+    <select id="selectAll" resultMap="OrdersWithDetailsResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               u.username, u.real_name, u.email, u.phone,
+               r.room_name, r.room_type, r.address, r.city, r.district, r.price_per_night
+        FROM orders o
+        LEFT JOIN user u ON o.user_id = u.id AND u.deleted = 0
+        LEFT JOIN room r ON o.room_id = r.id AND r.deleted = 0
+        <include refid="Where_Clause"/>
+        ORDER BY o.create_time DESC
+    </select>
+
+    <!-- 分页查询所有订单 -->
+    <select id="selectAllWithPaging" resultMap="OrdersWithDetailsResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               u.username, u.real_name, u.email, u.phone,
+               r.room_name, r.room_type, r.address, r.city, r.district, r.price_per_night
+        FROM orders o
+        LEFT JOIN user u ON o.user_id = u.id AND u.deleted = 0
+        LEFT JOIN room r ON o.room_id = r.id AND r.deleted = 0
+        <include refid="Where_Clause"/>
+        ORDER BY o.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计订单数量 -->
+    <select id="countOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders o
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 插入订单 -->
+    <insert id="insert" parameterType="Orders" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (
+            order_no, user_id, room_id, check_in_date, check_out_date, nights, guests,
+            total_price, contact_name, contact_phone, contact_email, special_requests,
+            order_status, payment_status, deleted
+        ) VALUES (
+            #{orderNo}, #{userId}, #{roomId}, #{checkInDate}, #{checkOutDate}, #{nights}, #{guests},
+            #{totalPrice}, #{contactName}, #{contactPhone}, #{contactEmail}, #{specialRequests},
+            #{orderStatus}, #{paymentStatus}, 0
+        )
+    </insert>
+
+    <!-- 更新订单信息 -->
+    <update id="update" parameterType="Orders">
+        UPDATE orders
+        <set>
+            <if test="checkInDate != null">check_in_date = #{checkInDate},</if>
+            <if test="checkOutDate != null">check_out_date = #{checkOutDate},</if>
+            <if test="nights != null">nights = #{nights},</if>
+            <if test="guests != null">guests = #{guests},</if>
+            <if test="totalPrice != null">total_price = #{totalPrice},</if>
+            <if test="contactName != null">contact_name = #{contactName},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="contactEmail != null">contact_email = #{contactEmail},</if>
+            <if test="specialRequests != null">special_requests = #{specialRequests},</if>
+            <if test="orderStatus != null">order_status = #{orderStatus},</if>
+            <if test="paymentStatus != null">payment_status = #{paymentStatus},</if>
+            <if test="paymentTime != null">payment_time = #{paymentTime},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+            <if test="cancelTime != null">cancel_time = #{cancelTime},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新订单状态 -->
+    <update id="updateOrderStatus">
+        UPDATE orders
+        SET order_status = #{orderStatus}, update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新支付状态 -->
+    <update id="updatePaymentStatus">
+        UPDATE orders
+        SET payment_status = #{paymentStatus}, 
+            payment_time = #{paymentTime}, 
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 取消订单 -->
+    <update id="cancelOrder">
+        UPDATE orders
+        SET order_status = 4, 
+            cancel_reason = #{cancelReason}, 
+            cancel_time = #{cancelTime}, 
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 逻辑删除订单 -->
+    <update id="deleteById">
+        UPDATE orders
+        SET deleted = 1, update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量逻辑删除订单 -->
+    <update id="deleteBatch">
+        UPDATE orders
+        SET deleted = 1, update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 查询即将到期的订单 -->
+    <select id="selectExpiringSoon" resultMap="OrdersResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM orders o
+        WHERE o.deleted = 0 
+        AND o.order_status IN (0, 1)
+        AND o.check_in_date &lt;= DATE_ADD(NOW(), INTERVAL #{beforeHours} HOUR)
+        ORDER BY o.check_in_date ASC
+    </select>
+
+    <!-- 查询需要自动确认的订单 -->
+    <select id="selectPendingAutoConfirm" resultMap="OrdersResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM orders o
+        WHERE o.deleted = 0 
+        AND o.order_status = 0
+        AND o.create_time &lt;= DATE_SUB(NOW(), INTERVAL #{beforeHours} HOUR)
+        ORDER BY o.create_time ASC
+    </select>
+
+    <!-- 统计用户订单数量 -->
+    <select id="countUserOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE user_id = #{userId} AND deleted = 0
+        <if test="orderStatus != null">
+            AND order_status = #{orderStatus}
+        </if>
+    </select>
+
+    <!-- 统计房源订单数量 -->
+    <select id="countRoomOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE room_id = #{roomId} AND deleted = 0
+        <if test="orderStatus != null">
+            AND order_status = #{orderStatus}
+        </if>
+    </select>
+
+    <!-- 检查订单号是否存在 -->
+    <select id="existsByOrderNo" resultType="boolean">
+        SELECT COUNT(*) &gt; 0
+        FROM orders
+        WHERE order_no = #{orderNo} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 统计今日完成订单数 -->
+    <select id="countCompletedOrdersToday" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE deleted = 0
+        AND order_status = 3
+        AND DATE(update_time) = CURDATE()
+    </select>
+
+    <!-- 获取总收入 -->
+    <select id="getTotalRevenue" resultType="double">
+        SELECT COALESCE(SUM(total_price), 0)
+        FROM orders
+        WHERE deleted = 0
+        AND payment_status = 1
+        AND order_status IN (1, 2, 3)
+    </select>
+
+    <!-- 获取今日收入 -->
+    <select id="getRevenueToday" resultType="double">
+        SELECT COALESCE(SUM(total_price), 0)
+        FROM orders
+        WHERE deleted = 0
+        AND payment_status = 1
+        AND order_status IN (1, 2, 3)
+        AND DATE(payment_time) = CURDATE()
+    </select>
+
+    <!-- 获取本月收入 -->
+    <select id="getRevenueThisMonth" resultType="double">
+        SELECT COALESCE(SUM(total_price), 0)
+        FROM orders
+        WHERE deleted = 0
+        AND payment_status = 1
+        AND order_status IN (1, 2, 3)
+        AND YEAR(payment_time) = YEAR(CURDATE())
+        AND MONTH(payment_time) = MONTH(CURDATE())
+    </select>
+
+    <!-- 获取用户总消费金额 -->
+    <select id="getUserTotalSpent" resultType="double">
+        SELECT COALESCE(SUM(total_price), 0)
+        FROM orders
+        WHERE deleted = 0
+        AND user_id = #{userId}
+        AND payment_status = 1
+        AND order_status IN (1, 2, 3)
+    </select>
+
+</mapper>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/mvc
+           http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <!-- 开启注解扫描，只扫描Controller -->
+    <context:component-scan base-package="com.hms.controller"/>
+
+    <!-- 开启SpringMVC注解支持 -->
+    <mvc:annotation-driven>
+        <mvc:message-converters>
+            <!-- 配置JSON转换器 -->
+            <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>application/json;charset=UTF-8</value>
+                        <value>text/html;charset=UTF-8</value>
+                    </list>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+    <!-- 静态资源处理 -->
+    <mvc:resources mapping="/static/**" location="/static/"/>
+    <mvc:resources mapping="/css/**" location="/static/css/"/>
+    <mvc:resources mapping="/js/**" location="/static/js/"/>
+    <mvc:resources mapping="/images/**" location="/static/images/"/>
+
+    <!-- 配置视图解析器 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+    <!-- 文件上传配置 -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <!-- 设置上传文件的最大尺寸为10MB -->
+        <property name="maxUploadSize" value="10485760"/>
+        <!-- 设置上传文件的编码 -->
+        <property name="defaultEncoding" value="UTF-8"/>
+    </bean>
+
+    <!-- 配置拦截器 -->
+    <mvc:interceptors>
+        <!-- 登录拦截器 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <!-- 排除不需要拦截的路径 -->
+            <mvc:exclude-mapping path="/"/>
+            <mvc:exclude-mapping path="/index.jsp"/>
+            <!-- 用户相关公共页面和API -->
+            <mvc:exclude-mapping path="/user/login"/>
+            <mvc:exclude-mapping path="/user/register"/>
+            <mvc:exclude-mapping path="/user/checkUsername"/>
+            <mvc:exclude-mapping path="/user/checkEmail"/>
+            <!-- 静态资源 -->
+            <mvc:exclude-mapping path="/static/**"/>
+            <mvc:exclude-mapping path="/css/**"/>
+            <mvc:exclude-mapping path="/js/**"/>
+            <mvc:exclude-mapping path="/images/**"/>
+            <mvc:exclude-mapping path="/favicon.ico"/>
+            <!-- 房源相关公共页面和API -->
+            <mvc:exclude-mapping path="/room/list"/>
+            <mvc:exclude-mapping path="/room/detail/*"/>
+            <mvc:exclude-mapping path="/room/cities"/>
+            <mvc:exclude-mapping path="/room/types"/>
+            <mvc:exclude-mapping path="/room/search"/>
+            <mvc:exclude-mapping path="/room/districts"/>
+            <!-- 房源详情API -->
+            <mvc:exclude-mapping path="/room/detail/*/api"/>
+            <!-- 系统状态检查API -->
+            <mvc:exclude-mapping path="/status"/>
+            <mvc:exclude-mapping path="/health"/>
+            <!-- 数据初始化API -->
+            <mvc:exclude-mapping path="/data/**"/>
+            <!-- 错误页面 -->
+            <mvc:exclude-mapping path="/error/**"/>
+            <mvc:exclude-mapping path="/403"/>
+            <mvc:exclude-mapping path="/404"/>
+            <mvc:exclude-mapping path="/500"/>
+            <bean class="com.hms.config.LoginInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <!-- 异常处理器 -->
+    <bean class="com.hms.config.GlobalExceptionHandler"/>
+
+</beans>

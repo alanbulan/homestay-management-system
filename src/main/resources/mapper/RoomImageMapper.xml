@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hms.mapper.RoomImageMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="RoomImageResultMap" type="RoomImage">
+        <id column="id" property="id"/>
+        <result column="room_id" property="roomId"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="image_name" property="imageName"/>
+        <result column="is_cover" property="isCover"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="create_time" property="createTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, room_id, image_url, image_name, is_cover, sort_order, create_time, deleted
+    </sql>
+
+    <!-- 根据ID查询图片 -->
+    <select id="selectById" resultMap="RoomImageResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM room_image
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 根据房源ID查询所有图片 -->
+    <select id="selectByRoomId" resultMap="RoomImageResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM room_image
+        WHERE room_id = #{roomId} AND deleted = 0
+        ORDER BY sort_order ASC, create_time ASC
+    </select>
+
+    <!-- 根据房源ID查询封面图片 -->
+    <select id="selectCoverByRoomId" resultMap="RoomImageResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM room_image
+        WHERE room_id = #{roomId} AND is_cover = 1 AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 插入图片 -->
+    <insert id="insert" parameterType="RoomImage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO room_image (
+            room_id, image_url, image_name, is_cover, sort_order, deleted
+        ) VALUES (
+            #{roomId}, #{imageUrl}, #{imageName}, #{isCover}, #{sortOrder}, 0
+        )
+    </insert>
+
+    <!-- 批量插入图片 -->
+    <insert id="insertBatch" parameterType="list">
+        INSERT INTO room_image (
+            room_id, image_url, image_name, is_cover, sort_order, deleted
+        ) VALUES
+        <foreach collection="images" item="image" separator=",">
+            (#{image.roomId}, #{image.imageUrl}, #{image.imageName}, 
+             #{image.isCover}, #{image.sortOrder}, 0)
+        </foreach>
+    </insert>
+
+    <!-- 更新图片信息 -->
+    <update id="update" parameterType="RoomImage">
+        UPDATE room_image
+        <set>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="imageName != null">image_name = #{imageName},</if>
+            <if test="isCover != null">is_cover = #{isCover},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 设置封面图片（需要先调用clearCoverImages，再调用此方法） -->
+    <update id="setCoverImage">
+        UPDATE room_image
+        SET is_cover = 1
+        WHERE id = #{imageId} AND room_id = #{roomId} AND deleted = 0
+    </update>
+
+    <!-- 清除房源的所有封面图片标记 -->
+    <update id="clearCoverImages">
+        UPDATE room_image
+        SET is_cover = 0
+        WHERE room_id = #{roomId} AND deleted = 0
+    </update>
+
+    <!-- 更新图片排序 -->
+    <update id="updateSortOrder">
+        UPDATE room_image
+        SET sort_order = #{sortOrder}
+        WHERE id = #{imageId} AND deleted = 0
+    </update>
+
+    <!-- 逻辑删除图片 -->
+    <update id="deleteById">
+        UPDATE room_image
+        SET deleted = 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量逻辑删除图片 -->
+    <update id="deleteBatch">
+        UPDATE room_image
+        SET deleted = 1
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 根据房源ID删除所有图片 -->
+    <update id="deleteByRoomId">
+        UPDATE room_image
+        SET deleted = 1
+        WHERE room_id = #{roomId}
+    </update>
+
+    <!-- 获取房源图片数量 -->
+    <select id="countByRoomId" resultType="long">
+        SELECT COUNT(*)
+        FROM room_image
+        WHERE room_id = #{roomId} AND deleted = 0
+    </select>
+
+    <!-- 获取房源下一个排序号 -->
+    <select id="getNextSortOrder" resultType="integer">
+        SELECT COALESCE(MAX(sort_order), 0) + 1
+        FROM room_image
+        WHERE room_id = #{roomId} AND deleted = 0
+    </select>
+
+</mapper>

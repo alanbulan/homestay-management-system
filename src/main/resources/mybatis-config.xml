@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <!-- 设置 -->
+    <settings>
+        <!-- 开启驼峰命名转换 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- 开启延迟加载 -->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <!-- 设置积极的延迟加载 -->
+        <setting name="aggressiveLazyLoading" value="false"/>
+        <!-- 开启二级缓存 -->
+        <setting name="cacheEnabled" value="true"/>
+        <!-- 设置超时时间 -->
+        <setting name="defaultStatementTimeout" value="25000"/>
+        <!-- 设置日志实现 -->
+        <setting name="logImpl" value="SLF4J"/>
+    </settings>
+
+    <!-- 类型别名 -->
+    <typeAliases>
+        <typeAlias type="com.hms.entity.User" alias="User"/>
+        <typeAlias type="com.hms.entity.Room" alias="Room"/>
+        <typeAlias type="com.hms.entity.RoomImage" alias="RoomImage"/>
+        <typeAlias type="com.hms.entity.Orders" alias="Orders"/>
+    </typeAliases>
+
+
+
+</configuration>

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hms.mapper.RoomMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="RoomResultMap" type="Room">
+        <id column="id" property="id"/>
+        <result column="room_name" property="roomName"/>
+        <result column="room_type" property="roomType"/>
+        <result column="description" property="description"/>
+        <result column="address" property="address"/>
+        <result column="city" property="city"/>
+        <result column="district" property="district"/>
+        <result column="price_per_night" property="pricePerNight"/>
+        <result column="max_guests" property="maxGuests"/>
+        <result column="area" property="area"/>
+        <result column="floor" property="floor"/>
+        <result column="facilities" property="facilities"/>
+        <result column="check_in_time" property="checkInTime"/>
+        <result column="check_out_time" property="checkOutTime"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+        <result column="cover_image" property="coverImage"/>
+    </resultMap>
+
+    <!-- 房源和图片关联结果映射 -->
+    <resultMap id="RoomWithImagesResultMap" type="Room" extends="RoomResultMap">
+        <collection property="images" ofType="RoomImage">
+            <id column="img_id" property="id"/>
+            <result column="img_room_id" property="roomId"/>
+            <result column="img_url" property="imageUrl"/>
+            <result column="img_name" property="imageName"/>
+            <result column="img_is_cover" property="isCover"/>
+            <result column="img_sort_order" property="sortOrder"/>
+            <result column="img_create_time" property="createTime"/>
+            <result column="img_deleted" property="deleted"/>
+        </collection>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        r.id, r.room_name, r.room_type, r.description, r.address, r.city, r.district,
+        r.price_per_night, r.max_guests, r.area, r.floor, r.facilities,
+        r.check_in_time, r.check_out_time, r.status, r.create_time, r.update_time, r.deleted
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            r.deleted = 0
+            <if test="city != null and city != ''">
+                AND r.city = #{city}
+            </if>
+            <if test="district != null and district != ''">
+                AND r.district = #{district}
+            </if>
+            <if test="roomType != null and roomType != ''">
+                AND r.room_type = #{roomType}
+            </if>
+            <if test="minPrice != null">
+                AND r.price_per_night &gt;= #{minPrice}
+            </if>
+            <if test="maxPrice != null">
+                AND r.price_per_night &lt;= #{maxPrice}
+            </if>
+            <if test="maxGuests != null">
+                AND r.max_guests &gt;= #{maxGuests}
+            </if>
+            <if test="status != null">
+                AND r.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (r.room_name LIKE CONCAT('%', #{keyword}, '%') 
+                     OR r.description LIKE CONCAT('%', #{keyword}, '%')
+                     OR r.address LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据ID查询房源 -->
+    <select id="selectById" resultMap="RoomResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               (SELECT ri.image_url FROM room_image ri 
+                WHERE ri.room_id = r.id AND ri.is_cover = 1 AND ri.deleted = 0 
+                LIMIT 1) as cover_image
+        FROM room r
+        WHERE r.id = #{id} AND r.deleted = 0
+    </select>
+
+    <!-- 根据ID查询房源（包含图片） -->
+    <select id="selectByIdWithImages" resultMap="RoomWithImagesResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               ri.id as img_id, ri.room_id as img_room_id, ri.image_url as img_url,
+               ri.image_name as img_name, ri.is_cover as img_is_cover,
+               ri.sort_order as img_sort_order, ri.create_time as img_create_time,
+               ri.deleted as img_deleted
+        FROM room r
+        LEFT JOIN room_image ri ON r.id = ri.room_id AND ri.deleted = 0
+        WHERE r.id = #{id} AND r.deleted = 0
+        ORDER BY ri.sort_order ASC
+    </select>
+
+    <!-- 查询所有房源 -->
+    <select id="selectAll" resultMap="RoomResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               (SELECT ri.image_url FROM room_image ri 
+                WHERE ri.room_id = r.id AND ri.is_cover = 1 AND ri.deleted = 0 
+                LIMIT 1) as cover_image
+        FROM room r
+        <include refid="Where_Clause"/>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 查询可用房源 -->
+    <select id="selectAvailableRooms" resultMap="RoomResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               (SELECT ri.image_url FROM room_image ri 
+                WHERE ri.room_id = r.id AND ri.is_cover = 1 AND ri.deleted = 0 
+                LIMIT 1) as cover_image
+        FROM room r
+        WHERE r.deleted = 0 AND r.status = 1
+        <if test="city != null and city != ''">
+            AND r.city = #{city}
+        </if>
+        <if test="district != null and district != ''">
+            AND r.district = #{district}
+        </if>
+        <if test="roomType != null and roomType != ''">
+            AND r.room_type = #{roomType}
+        </if>
+        <if test="minPrice != null">
+            AND r.price_per_night &gt;= #{minPrice}
+        </if>
+        <if test="maxPrice != null">
+            AND r.price_per_night &lt;= #{maxPrice}
+        </if>
+        <if test="maxGuests != null">
+            AND r.max_guests &gt;= #{maxGuests}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (r.room_name LIKE CONCAT('%', #{keyword}, '%') 
+                 OR r.description LIKE CONCAT('%', #{keyword}, '%')
+                 OR r.address LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        AND r.id NOT IN (
+            SELECT DISTINCT o.room_id
+            FROM orders o
+            WHERE o.deleted = 0 
+            AND o.order_status IN (0, 1, 2)
+            AND NOT (o.check_out_date &lt;= #{checkInDate} OR o.check_in_date &gt;= #{checkOutDate})
+        )
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 统计房源数量 -->
+    <select id="countRooms" resultType="long">
+        SELECT COUNT(*)
+        FROM room r
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 获取所有城市列表 -->
+    <select id="selectAllCities" resultType="string">
+        SELECT DISTINCT city
+        FROM room
+        WHERE deleted = 0 AND status = 1
+        ORDER BY city
+    </select>
+
+    <!-- 根据城市获取区域列表 -->
+    <select id="selectDistrictsByCity" resultType="string">
+        SELECT DISTINCT district
+        FROM room
+        WHERE city = #{city} AND deleted = 0 AND status = 1
+        ORDER BY district
+    </select>
+
+    <!-- 获取所有房型列表 -->
+    <select id="selectAllRoomTypes" resultType="string">
+        SELECT DISTINCT room_type
+        FROM room
+        WHERE deleted = 0 AND status = 1
+        ORDER BY room_type
+    </select>
+
+    <!-- 插入房源 -->
+    <insert id="insert" parameterType="Room" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO room (
+            room_name, room_type, description, address, city, district,
+            price_per_night, max_guests, area, floor, facilities,
+            check_in_time, check_out_time, status, deleted
+        ) VALUES (
+            #{roomName}, #{roomType}, #{description}, #{address}, #{city}, #{district},
+            #{pricePerNight}, #{maxGuests}, #{area}, #{floor}, #{facilities},
+            #{checkInTime}, #{checkOutTime}, #{status}, 0
+        )
+    </insert>
+
+    <!-- 更新房源信息 -->
+    <update id="update" parameterType="Room">
+        UPDATE room
+        <set>
+            <if test="roomName != null">room_name = #{roomName},</if>
+            <if test="roomType != null">room_type = #{roomType},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="pricePerNight != null">price_per_night = #{pricePerNight},</if>
+            <if test="maxGuests != null">max_guests = #{maxGuests},</if>
+            <if test="area != null">area = #{area},</if>
+            <if test="floor != null">floor = #{floor},</if>
+            <if test="facilities != null">facilities = #{facilities},</if>
+            <if test="checkInTime != null">check_in_time = #{checkInTime},</if>
+            <if test="checkOutTime != null">check_out_time = #{checkOutTime},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 更新房源状态 -->
+    <update id="updateStatus">
+        UPDATE room
+        SET status = #{status}, update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <!-- 逻辑删除房源 -->
+    <update id="deleteById">
+        UPDATE room
+        SET deleted = 1, update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量逻辑删除房源 -->
+    <update id="deleteBatch">
+        UPDATE room
+        SET deleted = 1, update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 检查房源在指定日期范围内是否可用 -->
+    <select id="isRoomAvailable" resultType="boolean">
+        SELECT COUNT(*) = 0
+        FROM orders o
+        WHERE o.room_id = #{roomId}
+        AND o.deleted = 0
+        AND o.order_status IN (0, 1, 2)
+        AND NOT (o.check_out_date &lt;= #{checkInDate,jdbcType=DATE} OR o.check_in_date &gt;= #{checkOutDate,jdbcType=DATE})
+        <if test="excludeOrderId != null">
+            AND o.id != #{excludeOrderId}
+        </if>
+    </select>
+
+    <!-- 统计今日新增房源数 -->
+    <select id="countNewRoomsToday" resultType="long">
+        SELECT COUNT(*)
+        FROM room
+        WHERE deleted = 0
+        AND DATE(create_time) = CURDATE()
+    </select>
+
+</mapper>
