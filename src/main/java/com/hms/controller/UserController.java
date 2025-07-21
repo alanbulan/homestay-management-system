@@ -270,7 +270,7 @@ public class UserController {
     @GetMapping("/list")
     @ResponseBody
     public Result<PageResult<User>> getUserList(@RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "5") Integer pageSize,
             @RequestParam(required = false) Integer userType,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String keyword,
@@ -280,7 +280,14 @@ public class UserController {
                 return Result.forbidden("权限不足");
             }
 
+            logger.info("用户分页查询参数: pageNum={}, pageSize={}, userType={}, status={}, keyword={}",
+                    pageNum, pageSize, userType, status, keyword);
+
             PageResult<User> result = userService.getUserList(pageNum, pageSize, userType, status, keyword);
+
+            logger.info("用户查询结果: 总数={}, 当前页={}, 总页数={}, 数据条数={}",
+                    result.getTotal(), result.getPageNum(), result.getPages(), result.getList().size());
+
             return Result.success(result);
 
         } catch (Exception e) {

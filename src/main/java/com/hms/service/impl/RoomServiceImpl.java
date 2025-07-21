@@ -75,9 +75,12 @@ public class RoomServiceImpl implements RoomService {
         // 查询总数
         Long total = roomMapper.countRooms(city, district, roomType, minPrice, maxPrice, maxGuests, status, keyword);
 
+        // 计算分页参数
+        int offset = (pageNum - 1) * pageSize;
+
         // 查询数据
         List<Room> rooms = roomMapper.selectAll(city, district, roomType, minPrice, maxPrice, maxGuests, status,
-                keyword);
+                keyword, offset, pageSize);
 
         // 封装分页结果
         return PageResult.of(pageNum, pageSize, total, rooms);

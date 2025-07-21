@@ -951,8 +951,9 @@
             const prevBtn = document.createElement('button');
             prevBtn.className = 'pagination-btn pagination-prev' + (currentPage === 1 ? ' disabled' : '');
             prevBtn.innerHTML = '← 上一页';
-            prevBtn.onclick = () => {
+            prevBtn.onclick = function() {
                 if (currentPage > 1) {
+                    console.log('点击上一页:', currentPage - 1);
                     loadRooms(currentPage - 1);
                 }
             };
@@ -998,8 +999,9 @@
             const nextBtn = document.createElement('button');
             nextBtn.className = 'pagination-btn pagination-next' + (currentPage === totalPages ? ' disabled' : '');
             nextBtn.innerHTML = '下一页 →';
-            nextBtn.onclick = () => {
+            nextBtn.onclick = function() {
                 if (currentPage < totalPages) {
+                    console.log('点击下一页:', currentPage + 1);
                     loadRooms(currentPage + 1);
                 }
             };
@@ -1017,7 +1019,10 @@
             const btn = document.createElement('button');
             btn.className = 'pagination-btn' + (pageNum === currentPage ? ' active' : '');
             btn.textContent = pageNum;
-            btn.onclick = () => loadRooms(pageNum);
+            btn.onclick = function() {
+                console.log('点击页码:', pageNum);
+                loadRooms(pageNum);
+            };
             return btn;
         }
 

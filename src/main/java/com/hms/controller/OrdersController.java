@@ -373,7 +373,7 @@ public class OrdersController {
     @GetMapping("/manage/list")
     @ResponseBody
     public Result<PageResult<Orders>> getOrderListForAdmin(@RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "5") Integer pageSize,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Long roomId,
             @RequestParam(required = false) Integer orderStatus,
@@ -387,8 +387,15 @@ public class OrdersController {
                 return Result.forbidden("权限不足");
             }
 
+            logger.info("订单分页查询参数: pageNum={}, pageSize={}, orderStatus={}, paymentStatus={}, keyword={}",
+                    pageNum, pageSize, orderStatus, paymentStatus, keyword);
+
             PageResult<Orders> result = ordersService.getOrderList(pageNum, pageSize, userId, roomId,
                     orderStatus, paymentStatus, startDate, endDate, keyword);
+
+            logger.info("订单查询结果: 总数={}, 当前页={}, 总页数={}, 数据条数={}",
+                    result.getTotal(), result.getPageNum(), result.getPages(), result.getList().size());
+
             return Result.success(result);
 
         } catch (Exception e) {

@@ -146,8 +146,11 @@ public class UserServiceImpl implements UserService {
         // 查询总数
         Long total = userMapper.countUsers(userType, status, keyword);
 
-        // 查询数据（暂时不使用分页，后续可以添加LIMIT OFFSET）
-        List<User> users = userMapper.selectAll(userType, status, keyword);
+        // 计算分页参数
+        int offset = (pageNum - 1) * pageSize;
+
+        // 查询数据（使用分页）
+        List<User> users = userMapper.selectAll(userType, status, keyword, offset, pageSize);
 
         // 封装分页结果
         return PageResult.of(pageNum, pageSize, total, users);

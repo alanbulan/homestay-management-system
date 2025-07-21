@@ -27,7 +27,7 @@
         <jackson.version>2.9.10</jackson.version>
         <slf4j.version>1.7.36</slf4j.version>
         <logback.version>1.2.12</logback.version>
-        <junit.version>4.13.2</junit.version>
+
     </properties>
 
     <!-- 配置阿里云镜像仓库 -->
@@ -92,12 +92,7 @@
             <artifactId>spring-tx</artifactId>
             <version>${spring.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>${spring.version}</version>
-            <scope>test</scope>
-        </dependency>
+
 
         <!-- MyBatis依赖 -->
         <dependency>
@@ -194,13 +189,7 @@
             <version>2.11.0</version>
         </dependency>
 
-        <!-- 测试依赖 -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
+
     </dependencies>
 
     <build>

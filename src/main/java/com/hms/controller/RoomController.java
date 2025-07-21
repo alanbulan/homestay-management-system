@@ -240,7 +240,7 @@ public class RoomController {
     @GetMapping("/manage/list")
     @ResponseBody
     public Result<PageResult<Room>> getRoomListForAdmin(@RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(defaultValue = "5") Integer pageSize,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String district,
             @RequestParam(required = false) String roomType,
@@ -264,10 +264,15 @@ public class RoomController {
                 return Result.forbidden("权限不足");
             }
 
-            logger.info("权限验证通过，开始查询房源列表");
+            logger.info("房源分页查询参数: pageNum={}, pageSize={}, city={}, roomType={}, status={}, keyword={}",
+                    pageNum, pageSize, city, roomType, status, keyword);
+
             PageResult<Room> result = roomService.getRoomList(pageNum, pageSize, city, district, roomType,
                     minPrice, maxPrice, maxGuests, status, keyword);
-            logger.info("房源列表查询完成，总数: {}", result.getTotal());
+
+            logger.info("房源查询结果: 总数={}, 当前页={}, 总页数={}, 数据条数={}",
+                    result.getTotal(), result.getPageNum(), result.getPages(), result.getList().size());
+
             return Result.success(result);
 
         } catch (Exception e) {

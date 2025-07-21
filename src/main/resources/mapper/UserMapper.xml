@@ -79,6 +79,9 @@
         FROM user
         <include refid="Where_Clause"/>
         ORDER BY create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset}, #{limit}
+        </if>
     </select>
 
     <!-- 统计用户数量 -->

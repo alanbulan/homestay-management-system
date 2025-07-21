@@ -107,12 +107,15 @@
     <!-- 查询所有房源 -->
     <select id="selectAll" resultMap="RoomResultMap">
         SELECT <include refid="Base_Column_List"/>,
-               (SELECT ri.image_url FROM room_image ri 
-                WHERE ri.room_id = r.id AND ri.is_cover = 1 AND ri.deleted = 0 
+               (SELECT ri.image_url FROM room_image ri
+                WHERE ri.room_id = r.id AND ri.is_cover = 1 AND ri.deleted = 0
                 LIMIT 1) as cover_image
         FROM room r
         <include refid="Where_Clause"/>
         ORDER BY r.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset}, #{limit}
+        </if>
     </select>
 
     <!-- 查询可用房源 -->
